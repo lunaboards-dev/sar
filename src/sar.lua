@@ -2,7 +2,7 @@ local sar = {}
 
 local stat = require("posix.sys.stat")
 local unistd = require("posix.unistd")
-local xxh64 = require("xxh")
+local xxh64 = require("xxh64")
 
 local se, smag = "<", "sar"
 if string.unpack("H", "\xaa\x55") == 0xaa55 then
