@@ -32,6 +32,13 @@ if not (args.create or args.extract or args.unpack or args.list or args.append o
 	parser:error("must specify one of -cxutai")
 end
 
+local rename = {}
+local function remove_leading(path)
+	return path:gsub("^[%./]*/", "")
+end
+
+local function remove_
+
 local files = args.file
 if args.from_stdin then
 	for line in io.stdin:lines() do

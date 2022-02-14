@@ -6,6 +6,10 @@ local function rotl64(x, r)
 	return (((x) << (r)) | ((x) >> (64 - (r))))
 end
 
+local sunpack = string.unpack
+local sbyte = string.byte
+local ssub = string.sub
+
 local function round(acc, input)
 	acc = acc + (input * prime2)
 	acc = rotl64(acc, 31)
@@ -35,17 +39,17 @@ local function finalize(h64, input)
 		if ((#input-off) < 8) then
 			if ((#input-off) < 4) then
 				for i=1, (#input-off) do
-					h64 = h64 ~ (input:byte(off+1) * prime5)
+					h64 = h64 ~ (sbyte(input, off+1) * prime5)
 					off = off + 1
 					h64 = rotl64(h64, 11) * prime1
 				end
 			else
-				h64 = h64 ~ (string.unpack("<I4", input, off+1) * prime1)
+				h64 = h64 ~ (sunpack("<I4", input, off+1) * prime1)
 				off = off + 4
 				h64 = rotl64(h64, 23) * prime2 + prime3
 			end
 		else
-			local k1 = round(0, string.unpack("<l", input, off+1))
+			local k1 = round(0, sunpack("<l", input, off+1))
 			off = off + 8
 			h64 = h64 ~ k1
 			h64 = rotl64(h64, 27) * prime1 + prime4
@@ -63,16 +67,16 @@ local function endian_align(input, seed)
 		local v4 = seed - prime1
 		local off = 1
 		repeat
-			v1 = round(v1, string.unpack("<l", input, off))
+			v1 = round(v1, sunpack("<l", input, off))
 			off = off + 8
-			v2 = round(v2, string.unpack("<l", input, off))
+			v2 = round(v2, sunpack("<l", input, off))
 			off = off + 8
-			v3 = round(v3, string.unpack("<l", input, off))
+			v3 = round(v3, sunpack("<l", input, off))
 			off = off + 8
-			v4 = round(v4, string.unpack("<l", input, off))
+			v4 = round(v4, sunpack("<l", input, off))
 			off = off + 8
 		until #input - off + 1 < 32
-		input = input:sub(off)
+		input = ssub(input, off)
 
 		h64 = rotl64(v1, 1) + rotl64(v2, 7) + rotl64(v3, 12) + rotl64(v4, 18)
 		h64 = merge_round(h64, v1)
@@ -127,21 +131,23 @@ function state:update(input)
 	self.size = self.size + #input
 	input = self.buffer .. input
 	local data_len = #input - (#input & 31)
-	self.buffer = input:sub(data_len+1)
-	local data = input:sub(1, data_len)
+	--self.buffer = input:sub(data_len+1)
+	self.buffer = ssub(input, data_len+1)
+	--local data = input:sub(1, data_len)
+	local data = ssub(input, 1, data_len)
 	local v1 = self.v1
 	local v2 = self.v2 -- << Can you see any borders from up here? >>
 	local v3 = self.v3
 	local v4 = self.v4
 	local off = 1
 	repeat
-		v1 = round(v1, string.unpack("<l", data, off))
+		v1 = round(v1, sunpack("<l", data, off))
 		off = off + 8
-		v2 = round(v2, string.unpack("<l", data, off))
+		v2 = round(v2, sunpack("<l", data, off))
 		off = off + 8
-		v3 = round(v3, string.unpack("<l", data, off))
+		v3 = round(v3, sunpack("<l", data, off))
 		off = off + 8
-		v4 = round(v4, string.unpack("<l", data, off))
+		v4 = round(v4, sunpack("<l", data, off))
 		off = off + 8
 	until #data - off + 1 < 32
 

@@ -35,7 +35,7 @@ local function dev(d)
 	return d >> minorbits, d & minormask
 end
 
-local function sar_stat(flist)
+local function sar_stat(flist, renamelist)
 	local slist = {}
 	for i=1, #flist do
 		local s = stat.lstat(flist[i])
@@ -53,7 +53,8 @@ local function sar_stat(flist)
 			ctime = s.st_ctime,
 			blksize = s.st_blksize,
 			blocks = s.st_blocks,
-			name = flist[i]
+			name = flist[i],
+			rename = renamelist and renamelist[i]
 		}
 	end
 	return slist
@@ -87,7 +88,8 @@ local function sar_writeheader(ofi, files)
 			f.size = 0
 			flags = 2
 		end
-		local hdr = epack(se, file_ent, f.size, off, f.uid & 0xFFFF, f.gid & 0xFFFF, f.atime, f.mtime, #f.name)..f.name
+		local name = f.rename or f.name
+		local hdr = epack(se, file_ent, f.size, off, f.uid & 0xFFFF, f.gid & 0xFFFF, f.atime, f.mtime, name)..name
 		off = off + f.size
 		hdr = epack(se, ent_wrap, i-1, #hdr, flags, tagc, f.mode)..hdr
 		table.insert(fent, hdr)
@@ -157,7 +159,7 @@ function sar.create_saz(output, files, compression)
 end
 ]]
 
-function sar.create(output, files)
+function sar.create(output, files, filerename)
 	local flist = sar_stat(files)
 	sar_writeheader(output, flist)
 	sar_writefiles(output, flist)
